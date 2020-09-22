@@ -1,122 +1,114 @@
 version: 2.1
-orbs:
-  snyk: snyk/snyk@0.0.12  
 jobs:
-  scan_app:
-    docker:
-      - image: circleci/node:12
-    steps:
-      - checkout
-      - run:
-          name: Snyk Scan Application files 
-          command: |
-            echo "Use snyk Orb here"
-      - snyk/scan:
-          additional-arguments: src/currencyservice/
-          fail-on-issues: false
-          monitor-on-build: false
-  scan_docker_image:
-    docker:
-      - image: circleci/node:12
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: false
-      - run:
-          name: Build Docker image
-          command: |
-            cd src/currencyservice
-            docker build -t $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME .
-      - snyk/scan:
-          fail-on-issues: false
-          monitor-on-build: false
-          docker-image-name: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
-          target-file: "src/currencyservice/Dockerfile"
-  deploy_microservices:
+  deploy_cicd_app:
     docker:
       - image: ariv3ra/terraform-gcp:tf-v0.13.3
     steps:
       - checkout
       - run:
-          name: Create .terraformrc file locally
-          command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc && cat $HOME/.terraformrc
-      - run:
-          name: Deploy Microservices to K8s on DigitalOcean 
+          name: Deploy cicd-app to K8s 
           command: |
-            export PIPE_LINE_NUMBER=<<pipeline.number>>
-            cd gremlin-do/digitalocean
-            terraform init
-            terraform plan \
-              -var do_token=$DIGITAL_OCEAN_TOKEN \
-              -var gremlin_team_id=$GREMLIN_TEAM_ID   \
-              -var gremlin_team_secret=$GREMLIN_TEAM_SECRET \
-             -var group_number=$PIPE_LINE_NUMBER -out=plan.txt
-            terraform apply \
-              -var do_token=$DIGITAL_OCEAN_TOKEN \
-              -var gremlin_team_id=$GREMLIN_TEAM_ID \
-              -var gremlin_team_secret=$GREMLIN_TEAM_SECRET \
-              -var group_number=$PIPE_LINE_NUMBER \
-              -auto-approve
-  destroy_microservices:
-    docker:
-      - image: ariv3ra/terraform-gcp:tf-v0.13.3
-    steps:
-      - checkout
-      - run:
-          name: Create .terraformrc file locally
-          command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc && cat $HOME/.terraformrc
-      - run:
-          name: Deploy Microservices to K8s on DigitalOcean 
-          command: |
-            export PIPE_LINE_NUMBER=<<pipeline.number>>
-            cd gremlin-do/digitalocean
-            terraform init
-            terraform destroy \
-              -var do_token=$DIGITAL_OCEAN_TOKEN \
-              -var gremlin_team_id=$GREMLIN_TEAM_ID \
-              -var gremlin_team_secret=$GREMLIN_TEAM_SECRET \
-              -var group_number=$PIPE_LINE_NUMBER \
-              -auto-approve
-  chaos_experiment_1:
-    docker:
-      - image: ariv3ra/terraform-gcp:tf-v0.13.3
-    steps:
-      - checkout
-      - run:
-          name: "Experiment #1 - Increase CPU to all nodes for 240 secsfor 80 percent"
-          command: |
-            cd gremlin-do/chaos-experiments/
-            ./experiment1.sh $GREMLIN_TEAM_ID $GREMLIN_API_KEY
-  chaos_experiment_2:
-    docker:
-      - image: ariv3ra/terraform-gcp:tf-v0.13.3
-    steps:
-      - checkout
-      - run:
-          name: "Experiment #2 - Testing non-critical application adservice"
-          command: |
-            cd gremlin-do/chaos-experiments/
-            ./experiment2.sh $GREMLIN_TEAM_ID $GREMLIN_API_KEY
+            export CIRCLE_USERNAME='punkdata'
+            cd chaos-experiments
+            ./deploy_cicd.sh ${CIRCLE_USERNAME}
+
+  # scan_docker_image:
+  #   docker:
+  #     - image: circleci/node:12
+  #   steps:
+  #     - checkout
+  #     - setup_remote_docker:
+  #         docker_layer_caching: false
+  #     - run:
+  #         name: Build Docker image
+  #         command: |
+  #           cd src/currencyservice
+  #           docker build -t $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME .
+  # deploy_microservices:
+  #   docker:
+  #     - image: ariv3ra/terraform-gcp:tf-v0.13.3
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Create .terraformrc file locally
+  #         command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc && cat $HOME/.terraformrc
+  #     - run:
+  #         name: Deploy Microservices to K8s on DigitalOcean 
+  #         command: |
+  #           export PIPE_LINE_NUMBER=<<pipeline.number>>
+  #           cd gremlin-do/digitalocean
+  #           terraform init
+  #           terraform plan \
+  #             -var do_token=$DIGITAL_OCEAN_TOKEN \
+  #             -var gremlin_team_id=$GREMLIN_TEAM_ID   \
+  #             -var gremlin_team_secret=$GREMLIN_TEAM_SECRET \
+  #            -var group_number=$PIPE_LINE_NUMBER -out=plan.txt
+  #           terraform apply \
+  #             -var do_token=$DIGITAL_OCEAN_TOKEN \
+  #             -var gremlin_team_id=$GREMLIN_TEAM_ID \
+  #             -var gremlin_team_secret=$GREMLIN_TEAM_SECRET \
+  #             -var group_number=$PIPE_LINE_NUMBER \
+  #             -auto-approve
+  # destroy_microservices:
+  #   docker:
+  #     - image: ariv3ra/terraform-gcp:tf-v0.13.3
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Create .terraformrc file locally
+  #         command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc && cat $HOME/.terraformrc
+  #     - run:
+  #         name: Deploy Microservices to K8s on DigitalOcean 
+  #         command: |
+  #           export PIPE_LINE_NUMBER=<<pipeline.number>>
+  #           cd gremlin-do/digitalocean
+  #           terraform init
+  #           terraform destroy \
+  #             -var do_token=$DIGITAL_OCEAN_TOKEN \
+  #             -var gremlin_team_id=$GREMLIN_TEAM_ID \
+  #             -var gremlin_team_secret=$GREMLIN_TEAM_SECRET \
+  #             -var group_number=$PIPE_LINE_NUMBER \
+  #             -auto-approve
+  # chaos_experiment_1:
+  #   docker:
+  #     - image: ariv3ra/terraform-gcp:tf-v0.13.3
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: "Experiment #1 - Increase CPU to all nodes for 240 secsfor 80 percent"
+  #         command: |
+  #           cd gremlin-do/chaos-experiments/
+  #           ./experiment1.sh $GREMLIN_TEAM_ID $GREMLIN_API_KEY
+  # chaos_experiment_2:
+  #   docker:
+  #     - image: ariv3ra/terraform-gcp:tf-v0.13.3
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: "Experiment #2 - Testing non-critical application adservice"
+  #         command: |
+  #           cd gremlin-do/chaos-experiments/
+  #           ./experiment2.sh $GREMLIN_TEAM_ID $GREMLIN_API_KEY
 workflows:
-  scan_deploy:
+  deploy_chaos:
     jobs:
-      - scan_app
-      - scan_docker_image
-      - deploy_microservices
-      - chaos_experiment_1:
-          requires:
-            - deploy_microservices
-      - execute_chaos_exper_2:
-          type: approval
-          requires:
-            - chaos_experiment_1
-      - chaos_experiment_2:
-          requires:
-            - execute_chaos_exper_2            
-      - approve_destroy:
-          type: approval
-          requires:
-            - deploy_microservices
-      - destroy_microservices:
-          requires:
-            - approve_destroy
+      - deploy_cicd_app
+      # - scan_docker_image
+      # - deploy_microservices
+      # - chaos_experiment_1:
+      #     requires:
+      #       - deploy_microservices
+      # - execute_chaos_exper_2:
+      #     type: approval
+      #     requires:
+      #       - chaos_experiment_1
+      # - chaos_experiment_2:
+      #     requires:
+      #       - execute_chaos_exper_2            
+      # - approve_destroy:
+      #     type: approval
+      #     requires:
+      #       - deploy_microservices
+      # - destroy_microservices:
+      #     requires:
+      #       - approve_destroy

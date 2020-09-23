@@ -8,7 +8,7 @@ jobs:
       - run:
           name: Deploy cicd-app to K8s 
           command: |
-            cd chaos_experiments/
+            cd chaos-experiments/
             ./deploy-cicd.sh ${CIRCLE_USERNAME}
   chaos_exper1:
     docker:

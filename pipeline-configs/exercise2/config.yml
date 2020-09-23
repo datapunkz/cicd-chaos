@@ -16,7 +16,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Choas Experiment #1 - Increase CPU 20 percent for 120 secs"
+          name: "Chaos Experiment #1 - Increase CPU 20 percent for 120 secs"
           command: |
             cd chaos-experiments/
             ./experiment1.sh ${GREMLIN_TEAM_ID} ${GREMLIN_API_KEY} ${USER_NAME}
@@ -44,7 +44,7 @@ workflows:
       - exec_exper2:
           type: approval
           requires:
-            - chaos_expr1
+            - chaos_exper1
       - chaos_exper2:
           requires:
             - exec_exper2            

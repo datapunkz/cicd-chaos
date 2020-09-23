@@ -1,12 +1,3 @@
-# Todo List
-
-1. Deploy nodejs to DO Cluster
-    - DO API TOKEN
-    - DO CLuster name
-    - kubectl apply -f <create-manifest>
-2.  
-- 
-
 CHAOS_ID=$1
 
 # Create cicd app K8s Manifest file

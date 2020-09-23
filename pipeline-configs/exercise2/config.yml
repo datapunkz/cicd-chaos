@@ -8,107 +8,43 @@ jobs:
       - run:
           name: Deploy cicd-app to K8s 
           command: |
-            export CIRCLE_USERNAME='punkdata'
-            cd chaos-experiments
-            ./deploy_cicd.sh ${CIRCLE_USERNAME}
-
-  # scan_docker_image:
-  #   docker:
-  #     - image: circleci/node:12
-  #   steps:
-  #     - checkout
-  #     - setup_remote_docker:
-  #         docker_layer_caching: false
-  #     - run:
-  #         name: Build Docker image
-  #         command: |
-  #           cd src/currencyservice
-  #           docker build -t $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME .
-  # deploy_microservices:
-  #   docker:
-  #     - image: ariv3ra/terraform-gcp:tf-v0.13.3
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Create .terraformrc file locally
-  #         command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc && cat $HOME/.terraformrc
-  #     - run:
-  #         name: Deploy Microservices to K8s on DigitalOcean 
-  #         command: |
-  #           export PIPE_LINE_NUMBER=<<pipeline.number>>
-  #           cd gremlin-do/digitalocean
-  #           terraform init
-  #           terraform plan \
-  #             -var do_token=$DIGITAL_OCEAN_TOKEN \
-  #             -var gremlin_team_id=$GREMLIN_TEAM_ID   \
-  #             -var gremlin_team_secret=$GREMLIN_TEAM_SECRET \
-  #            -var group_number=$PIPE_LINE_NUMBER -out=plan.txt
-  #           terraform apply \
-  #             -var do_token=$DIGITAL_OCEAN_TOKEN \
-  #             -var gremlin_team_id=$GREMLIN_TEAM_ID \
-  #             -var gremlin_team_secret=$GREMLIN_TEAM_SECRET \
-  #             -var group_number=$PIPE_LINE_NUMBER \
-  #             -auto-approve
-  # destroy_microservices:
-  #   docker:
-  #     - image: ariv3ra/terraform-gcp:tf-v0.13.3
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Create .terraformrc file locally
-  #         command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc && cat $HOME/.terraformrc
-  #     - run:
-  #         name: Deploy Microservices to K8s on DigitalOcean 
-  #         command: |
-  #           export PIPE_LINE_NUMBER=<<pipeline.number>>
-  #           cd gremlin-do/digitalocean
-  #           terraform init
-  #           terraform destroy \
-  #             -var do_token=$DIGITAL_OCEAN_TOKEN \
-  #             -var gremlin_team_id=$GREMLIN_TEAM_ID \
-  #             -var gremlin_team_secret=$GREMLIN_TEAM_SECRET \
-  #             -var group_number=$PIPE_LINE_NUMBER \
-  #             -auto-approve
-  # chaos_experiment_1:
-  #   docker:
-  #     - image: ariv3ra/terraform-gcp:tf-v0.13.3
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: "Experiment #1 - Increase CPU to all nodes for 240 secsfor 80 percent"
-  #         command: |
-  #           cd gremlin-do/chaos-experiments/
-  #           ./experiment1.sh $GREMLIN_TEAM_ID $GREMLIN_API_KEY
-  # chaos_experiment_2:
-  #   docker:
-  #     - image: ariv3ra/terraform-gcp:tf-v0.13.3
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: "Experiment #2 - Testing non-critical application adservice"
-  #         command: |
-  #           cd gremlin-do/chaos-experiments/
-  #           ./experiment2.sh $GREMLIN_TEAM_ID $GREMLIN_API_KEY
+            cd chaos_experiments/
+            ./deploy-cicd.sh ${CIRCLE_USERNAME}
+  chaos_exper1:
+    docker:
+      - image: ariv3ra/terraform-gcp:tf-v0.13.3
+    steps:
+      - checkout
+      - run:
+          name: "Choas Experiment #1 - Increase CPU 20 percent for 120 secs"
+          command: |
+            cd chaos-experiments/
+            ./experiment1.sh $GREMLIN_TEAM_ID $GREMLIN_API_KEY $CIRCLE_USERNAME
+  chaos_exper2:
+    docker:
+      - image: ariv3ra/terraform-gcp:tf-v0.13.3
+    steps:
+      - checkout
+      - run:
+          name: "Chaos Experiment #2 - Increase CPU 60 percent for 120 secs"
+          command: |
+            cd chaos-experiments/
+            ./experiment2.sh $GREMLIN_TEAM_ID $GREMLIN_API_KEY $CIRCLE_USERNAME            
 workflows:
   deploy_chaos:
     jobs:
       - deploy_cicd_app
-      # - scan_docker_image
-      # - deploy_microservices
-      # - chaos_experiment_1:
-      #     requires:
-      #       - deploy_microservices
-      # - execute_chaos_exper_2:
-      #     type: approval
-      #     requires:
-      #       - chaos_experiment_1
-      # - chaos_experiment_2:
-      #     requires:
-      #       - execute_chaos_exper_2            
-      # - approve_destroy:
-      #     type: approval
-      #     requires:
-      #       - deploy_microservices
-      # - destroy_microservices:
-      #     requires:
-      #       - approve_destroy
+      - exec_exper1:
+          type: approval
+          requires:
+            - deploy_cicd_app      
+      - chaos_exper1:
+          requires:
+            - exec_exper1
+      - exec_exper2:
+          type: approval
+          requires:
+            - chaos_expr1
+      - chaos_exper2:
+          requires:
+            - exec_exper2            

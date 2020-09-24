@@ -1,0 +1,50 @@
+version: 2.1
+jobs:
+  deploy_cicd_app:
+    docker:
+      - image: ariv3ra/terraform-gcp:tf-v0.13.3
+    steps:
+      - checkout
+      - run:
+          name: Deploy cicd-app to K8s 
+          command: |
+            cd chaos-experiments/
+            ./deploy-cicd.sh ${USER_NAME}
+  chaos_exper1:
+    docker:
+      - image: ariv3ra/terraform-gcp:tf-v0.13.3
+    steps:
+      - checkout
+      - run:
+          name: "Chaos Experiment #1 - Increase CPU 20 percent for 120 secs"
+          command: |
+            cd chaos-experiments/
+            ./experiment1.sh ${GREMLIN_TEAM_ID} ${GREMLIN_API_KEY} ${USER_NAME}
+  chaos_exper2:
+    docker:
+      - image: ariv3ra/terraform-gcp:tf-v0.13.3
+    steps:
+      - checkout
+      - run:
+          name: "Chaos Experiment #2 - Increase CPU 60 percent for 120 secs"
+          command: |
+            cd chaos-experiments/
+            ./experiment2.sh ${GREMLIN_TEAM_ID} ${GREMLIN_API_KEY} ${USER_NAME}
+workflows:
+  deploy_chaos:
+    jobs:
+      - deploy_cicd_app
+      - exec_exper1:
+          type: approval
+          requires:
+            - deploy_cicd_app      
+      - chaos_exper1:
+          requires:
+            - exec_exper1
+      - exec_exper2:
+          type: approval
+          requires:
+            - chaos_exper1
+      - chaos_exper2:
+          requires:
+            - exec_exper2            

@@ -1,6 +1,12 @@
 version: 2.1
 jobs:
-  build_test:
+  unit_tests:
+    parameters:
+      node-version:
+        type: string
+      os:
+        type: executor
+      executor: << parameters.os >>
     docker:
       - image: circleci/node:12
     steps:
@@ -30,7 +36,7 @@ jobs:
       - store_artifacts:
           path: reports
           destination: sast-scan-reports          
-  deploy:
+  build_docker_image:
     docker:
       - image: circleci/node:12
     steps:
@@ -48,8 +54,13 @@ jobs:
 workflows:
   build_test_deploy:
     jobs:
-      - build_test
+      - unit_tests:
+          matrix:
+            parameters:
+              node-version: [11.9.0,13.9.0]
+              os: [linux]
       - vuln_scan
-      - deploy:
+      - build_docker_image:
           requires:
-            - build_test
+            - unit_tests
+            - vuln_scan

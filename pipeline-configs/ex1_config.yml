@@ -1,6 +1,12 @@
 version: 2.1
 jobs:
-  build_test:
+  unit_tests:
+    parameters:
+      node-version:
+        type: string
+      os:
+        type: executor
+      executor: << parameters.os >>
     docker:
       - image: circleci/node:12
     steps:
@@ -48,9 +54,13 @@ jobs:
 workflows:
   build_test_deploy:
     jobs:
-      - build_test
+      - unit_tests:
+          matrix:
+            parameters:
+              node-version: [11.9.0,13.9.0]
+              os: [linux]
       - vuln_scan
       - build_docker_image:
           requires:
-            - build_test
-            - build_docker_image
+            - unit_tests
+            - vuln_scan

@@ -17,6 +17,19 @@ jobs:
           path: test-results
       - store_artifacts:
           path: test-results
+  vuln_scan:
+    docker:
+      - image: shiftleft/sast-scan
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Perform Scan
+          command: |
+            scan --build
+      - store_artifacts:
+          path: reports
+          destination: sast-scan-reports          
   deploy:
     docker:
       - image: circleci/node:12
@@ -36,6 +49,7 @@ workflows:
   build_test_deploy:
     jobs:
       - build_test
+      - vuln_scan
       - deploy:
           requires:
             - build_test

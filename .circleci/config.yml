@@ -1,62 +1,50 @@
 version: 2.1
 jobs:
-  unit_tests:
-    parameters:
-      node-version:
-        type: string
+  deploy_cicd_app:
     docker:
-      - image: circleci/node:12
+      - image: ariv3ra/terraform-gcp:tf-v0.13.3
     steps:
       - checkout
       - run:
-          name: Install npm dependencies
+          name: Deploy cicd-app to K8s 
           command: |
-            sudo npm install -g
-      - run:
-          name: Run Unit Tests
-          command: |
-            ./node_modules/mocha/bin/mocha test/ --reporter mochawesome --reporter-options reportDir=test-results,reportFilename=test-results
-      - store_test_results:
-          path: test-results
-      - store_artifacts:
-          path: test-results
-  vuln_scan:
+            cd chaos-experiments/
+            ./deploy-cicd.sh ${USER_NAME}
+  chaos_exper1:
     docker:
-      - image: shiftleft/sast-scan
-    working_directory: ~/repo
+      - image: ariv3ra/terraform-gcp:tf-v0.13.3
     steps:
       - checkout
       - run:
-          name: Perform Scan
+          name: "Chaos Experiment #1 - Increase CPU 20 percent for 120 secs"
           command: |
-            scan --build
-      - store_artifacts:
-          path: reports
-          destination: sast-scan-reports          
-  build_docker_image:
+            cd chaos-experiments/
+            ./experiment1.sh ${GREMLIN_TEAM_ID} ${GREMLIN_API_KEY} ${USER_NAME}
+  chaos_exper2:
     docker:
-      - image: circleci/node:12
+      - image: ariv3ra/terraform-gcp:tf-v0.13.3
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: false
       - run:
-          name: Build Docker image
+          name: "Chaos Experiment #2 - Increase CPU 60 percent for 120 secs"
           command: |
-            export TAG=0.1.<< pipeline.number >>
-            export IMAGE_NAME=nodejs-app/$CIRCLE_PROJECT_REPONAME
-            docker build -t $IMAGE_NAME -t $IMAGE_NAME:$TAG .
-            # echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
-            # docker push $IMAGE_NAME
+            cd chaos-experiments/
+            ./experiment2.sh ${GREMLIN_TEAM_ID} ${GREMLIN_API_KEY} ${USER_NAME}
 workflows:
-  test_deploy:
+  deploy_chaos:
     jobs:
-      - unit_tests:
-          matrix:
-            parameters:
-              node-version: [11.9.0,13.9.0]
-      - vuln_scan
-      - build_docker_image:
+      - deploy_cicd_app
+      - exec_exper1:
+          type: approval
           requires:
-            - unit_tests
-            - vuln_scan
+            - deploy_cicd_app      
+      - chaos_exper1:
+          requires:
+            - exec_exper1
+      - exec_exper2:
+          type: approval
+          requires:
+            - chaos_exper1
+      - chaos_exper2:
+          requires:
+            - exec_exper2            

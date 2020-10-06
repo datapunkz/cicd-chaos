@@ -47,7 +47,7 @@ This CI/CD pipeline integrates with multiple systems which required access to th
 
 ### Hello World config.yml
 
-This repo starts with the config.yml that hosts a simple pipeline example called hello world. It is a simple build that basically echos the string "Hello World. It's intended to demonstrate a very simple example of a CircleCI pipeline file.
+This repo starts with the config.yml that hosts a simple pipeline example called hello world. It is a simple build that basically echos the string `"Hello World"`. It's intended to demonstrate a very simple example of a CircleCI pipeline file.
 
 ### Clone this Repo 
 
@@ -77,7 +77,26 @@ In this exercise you learned about CircleCI config.yml files and how to create u
 
 ## Exercise 2
 
+In this exercise you'll learn how to apply Chaos concepts into CI/CD pipelines.
 
+### Exercise 2 config.yml
+
+CircleCI only executes the `config.yml` found in the `.circleci/` directory which means that you'll have to modify the config.yml found in the `.circleci/` directory with the content found in the `ex2_config.yml` file found in the `pipeline-configs/` directory. 
+
+You can copy and paste the contents from the `ex2_config.yml` into the `.circleci/config.yml` file or you can run the `ex2_to_config.sh` script which copies the exercise 1 file into the appropriate directory. To use the script run this command from the root of this repo (Linux or MacOS):
+
+```
+./ex2_to_config.sh
+```
+
+### Trigger the Exercise 2 Pipeline on CircleCI
+
+Which ever copy method you chose you must run a `git commit` & `git push` of the modified `.circleci/config.yml` in order for CircleCI to execute the Exercise 1 CI/Cd pipeline. Once the git push is executed you can observe your build execute the directives inside the config.yml file.
+
+
+### Exercise 2 Summary
+
+In this exercise you learned about CircleCI config.yml files and how to integrate Chaos experiments into your CI/CD pipelines.
 
 [1]: https://circleci.com/docs/2.0/getting-started/#setting-up-circleci
 [2]: https://circleci.com/docs/2.0/env-vars/#setting-an-environment-variable-in-a-project

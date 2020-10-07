@@ -77,8 +77,22 @@ In this exercise you learned about CircleCI config.yml files and how to create u
 
 ## Exercise 2
 
-In this exercise you'll learn how to apply Chaos concepts into CI/CD pipelines.
+In this exercise you'll learn how to apply Chaos Engineering into CI/CD pipelines. Chaos Engineering are thoughtful, planned experiments designed to reveal weakness in our systems. Today, we will use Gremlin for our Chaos Engineering experiments. Gremlin provides you with the framework to safely, securely, and simply simulate real outages with an ever-growing library of attacks. A Gremlin account will be provided for you, if you would like to create your own, feel free to sign up via [here.](www.gremlin.com/get-started).
 
+To implement Chaos Engineering, one should follow the scientific method to implement experiments:
+
+1. Observe Your System
+2. Baseline your metrics
+3. Form a Hypothesis with Abort Conditions
+4. Define Blast Radius
+5. Run Experiment
+6. Analyze Results
+7. Expand Scope and Re-Test
+8. Share Results
+
+By implementing Chaos Engineering Experiments into your CI/CD pipeline you are automating experiments. Chaos Engineering Automation is the practice of implementing Chaos Engineering Experiments in a continuous way to prevent regression into past failures.
+
+In this exercise we will have a chance to implement two chaos engineering experiments while observing an expanding the blast radius.    
 ### Exercise 2 config.yml
 
 CircleCI only executes the `config.yml` found in the `.circleci/` directory which means that you'll have to modify the config.yml found in the `.circleci/` directory with the content found in the `ex2_config.yml` file found in the `pipeline-configs/` directory. 
@@ -88,7 +102,7 @@ You can copy and paste the contents from the `ex2_config.yml` into the `.circlec
 ```
 ./ex2_to_config.sh
 ```
-
+You can see the two chaos engineering experiments we will unleash via `chaos-experiments/experiment1.sh` and `chaos-experiments/experiment2.sh`. This leverages Gremlin's API, you can see the other API calls you can make via our [example][3] or use [Gremlin API Examples][4] 
 ### Trigger the Exercise 2 Pipeline on CircleCI
 
 Which ever copy method you chose you must run a `git commit` & `git push` of the modified `.circleci/config.yml` in order for CircleCI to execute the Exercise 1 CI/Cd pipeline. Once the git push is executed you can observe your build execute the directives inside the config.yml file.
@@ -100,5 +114,5 @@ In this exercise you learned about CircleCI config.yml files and how to integrat
 
 [1]: https://circleci.com/docs/2.0/getting-started/#setting-up-circleci
 [2]: https://circleci.com/docs/2.0/env-vars/#setting-an-environment-variable-in-a-project
-[3]: 
-[4]: 
+[3]: https://www.gremlin.com/docs/api-reference/examples/#creating-attacks
+[4]: https://www.gremlin.com/community/tutorials/getting-started-with-gremlins-api/#step-4---use-api-examples-to-run-an-experiment

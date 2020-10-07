@@ -1,14 +1,62 @@
 version: 2.1
 jobs:
-  hello_world:
+  unit_tests:
+    parameters:
+      node-version:
+        type: string
     docker:
       - image: circleci/node:12
     steps:
       - checkout
       - run:
-          name: Echo Hello World
-          command: echo "Hello World! This is Pipeline Number:" <<pipeline.number>>
+          name: Install npm dependencies
+          command: |
+            sudo npm install -g
+      - run:
+          name: Run Unit Tests
+          command: |
+            ./node_modules/mocha/bin/mocha test/ --reporter mochawesome --reporter-options reportDir=test-results,reportFilename=test-results
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
+  vuln_scan:
+    docker:
+      - image: shiftleft/sast-scan
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Perform Scan
+          command: |
+            scan --build
+      - store_artifacts:
+          path: reports
+          destination: sast-scan-reports          
+  build_docker_image:
+    docker:
+      - image: circleci/node:12
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - run:
+          name: Build Docker image
+          command: |
+            export TAG=0.1.<< pipeline.number >>
+            export IMAGE_NAME=nodejs-app/$CIRCLE_PROJECT_REPONAME
+            docker build -t $IMAGE_NAME -t $IMAGE_NAME:$TAG .
+            # echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
+            # docker push $IMAGE_NAME
 workflows:
-  wf_hello_world:
+  test_deploy:
     jobs:
-      - hello_world
+      - unit_tests:
+          matrix:
+            parameters:
+              node-version: [11.9.0,13.9.0]
+      - vuln_scan
+      - build_docker_image:
+          requires:
+            - unit_tests
+            - vuln_scan
